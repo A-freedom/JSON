@@ -2,21 +2,22 @@ import java.io.File
 import java.io.FileInputStream
 import java.util.*
 
-class JSON(private val file: File){
+class JSON(private val file: File) {
     private var mainNode: Node = Node(null)
     private var point = mainNode
-    fun readFile(){
-        if (this.file.exists()){
-            mainNode.data = Data("main",null)
+    fun readFile() {
+        if (this.file.exists()) {
+            mainNode.data = Data("main", null)
             String(FileInputStream(file).readBytes()).findBrackets(mainNode)
-        }else{
+        } else {
             error("error file is node exist")
         }
     }
+
     /* private functions */
-    private fun String.search(nodeFather: Node){
+    private fun String.search(nodeFather: Node) {
         val text = toString()
-        if (text.contains('{')){
+        if (text.contains('{')) {
             text.findLines().forEach {
                 val nodeSon = Node(nodeFather)
                 nodeSon.father = nodeFather
@@ -24,7 +25,7 @@ class JSON(private val file: File){
                 nodeFather.sonsList.addLast(nodeSon)
             }
             text.findBrackets(nodeFather)
-        }else{
+        } else {
             text.split(',').forEach {
                 val nodeSon = Node(nodeFather)
                 nodeSon.data = it.toData()
@@ -33,57 +34,74 @@ class JSON(private val file: File){
             }
         }
     }
+
     private fun String.findBrackets(node: Node) {
-        var s = 0
-        var count = 0
-        for ( i in 0 until length){
-            if (get(i) == '{'){
-                if(count++ == 0){
-                    s = i
-                }
-
-            }else if (get(i) == '}'){
-                if (--count == 0){
-                    node.nodeTitle = toString().findTile(s)
-//                    println(toString().copy(s+1,i-1))
-//                    println("+++++++++++++++++++++")
-                    toString().copy(s+1,i-1).search(node)
-                }
-            }
-        }
-
-    }
-    private fun String.findTile(s: Int): String {
-        var point = s
-        while (point > 0){
-            point --
-            if (get(point) == ','){break}
-        }
-        return copy(point+1 , s-1).filterNot { it == '\n' || it == ' ' || it == '"' || it == ','  || it == ':'}
-    }
-    private fun String.toData(): Data? {
-        if (length <= 3) return null
-        val matter = toString().filterNot { it == '\n' || it == ' ' || it == '"' || it == ',' }.split(':')
-        return Data(matter[0],matter[1])
-    }
-    private fun String.findLines(): List<String> {
-       var text = toString()
-        var count = 0
         var start = 0
-        for (i in 0 until length){
-            when (get(i)){
-                '{' -> if (count++ == 0) start = i
-                '}' -> if (--count == 0) {
-                    for ( i in 0..i-start){
-
+        var count = 0
+        for (pointer in 0 until length) {
+            when (get(pointer)) {
+                '{' -> if (count++ == 0) start = pointer
+                '}' -> {
+                    if (--count == 0) {
+                        node.nodeTitle = toString().findTile(start)
+                        toString().copy(start + 1, pointer - 1).search(node)
                     }
                 }
             }
         }
-        println("text.length : ${text.length}")
+
+    }
+
+    private fun String.findTile(s: Int): String {
+        var point = s
+        while (point > 0) {
+            point--
+            if (get(point) == ',') {
+                break
+            }
+        }
+        return copy(point + 1, s - 1).filterNot { it == '\n' || it == ' ' || it == '"' || it == ',' || it == ':' }
+    }
+
+    private fun String.toData(): Data? {
+        if (length <= 3) return null
+        val matter = toString().filterNot { it == '\n' || it == ' ' || it == '"' || it == ',' }.split(':')
+        return Data(matter[0], matter[1])
+    }
+
+    private fun String.findLines(): List<String> {
+        var text = toString()
+        var count = 0
+        var start = 0
+        fun removeBR(){
+            loop@for (pointer in 0 until text.length) {
+                when (get(pointer)) {
+                    '{' -> if (count++ == 0) {
+                        start = pointer
+                        do {
+                            start --
+                        }while (start > 0 && get(start) != ',')
+                    }
+                    '}' -> if (--count == 0) {
+                        var end = pointer
+                        while (get(end)!= ',' && end >= length){
+                            end++
+                        }
+                        text = text.removeRange(start+1, end+1)
+                        removeBR()
+                        break@loop
+                    }
+                }
+            }
+        }
+        removeBR()
+        text = text.filterNot { it == '\n' || it == ' '}
         println("++++++++++++++++++++++++++++++++")
+        println(text.split(','))
+        println(text.split(',').size)
         return text.split(',')
     }
+
     private fun String.copy(start: Int, end: Int): String {
         var out = ""
         for (i in start..end)
@@ -92,13 +110,16 @@ class JSON(private val file: File){
     }
 
 
-    class Node(var father: Node?){
+    class Node(var father: Node?) {
         var sonsList = LinkedList<Node>()
         var data: Data? = null
         var nodeTitle = ""
-        fun haveNodeInside():Boolean{return !sonsList.isEmpty()}
+        fun haveNodeInside(): Boolean {
+            return !sonsList.isEmpty()
+        }
     }
-    class Data(var name:String,var value: Any?)
+
+    class Data(var name: String, var value: Any?)
     /* public functions */
 //    fun getNode(name:String):Node?{
 //            point.sonsList.forEach {
