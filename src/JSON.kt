@@ -71,23 +71,27 @@ class JSON(private val file: File) {
 
     private fun String.findLines(): List<String> {
         var text = toString()
-        var count = 0
-        var start = 0
         fun removeBR(){
+            var count = 0
+            var start = 0
             loop@for (pointer in 0 until text.length) {
                 when (get(pointer)) {
                     '{' -> if (count++ == 0) {
                         start = pointer
                         do {
                             start --
-                        }while (start > 0 && get(start) != ',')
+                        }while (start > 0 && get(start) != ',' && get(start) != '}')
                     }
                     '}' -> if (--count == 0) {
                         var end = pointer
-                        while (get(end)!= ',' && end >= length){
-                            end++
-                        }
+                        do {
+                            end ++
+                        }while (end < length-1 && get(end) != ','&& get(start) != '{')
+
                         text = text.removeRange(start+1, end+1)
+                        println("--------------------------")
+                        println(text)
+
                         removeBR()
                         break@loop
                     }
@@ -95,10 +99,10 @@ class JSON(private val file: File) {
             }
         }
         removeBR()
-        text = text.filterNot { it == '\n' || it == ' '}
-        println("++++++++++++++++++++++++++++++++")
-        println(text.split(','))
-        println(text.split(',').size)
+//        text = text.filterNot { it == '\n' || it == ' '}
+//        println("++++++++++++++++++++++++++++++++")
+//        println(text.split(','))
+//        println(text.split(',').size)
         return text.split(',')
     }
 
